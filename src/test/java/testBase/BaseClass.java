@@ -27,9 +27,16 @@ import org.testng.annotations.Parameters;
 
 public class BaseClass {
 
-	public static WebDriver driver;
+	private static ThreadLocal<WebDriver> tlDriver = new ThreadLocal<>();
 	public Logger logger; // log4j
 	public Properties p;
+
+	public static WebDriver getDriver() {
+		return tlDriver.get();
+	}
+
+	// Keep backward-compatible field reference
+	public WebDriver driver;
 
 	@BeforeClass(groups = { "Sanity", "Regression", "Master", "DataProvider" })
 	@Parameters({ "os", "browser" })
@@ -38,11 +45,12 @@ public class BaseClass {
 		FileReader file = new FileReader("./src//test//resources//config.properties");
 		p = new Properties();
 		p.load(file);
+		resolveEnvVariables(p);
 
 		logger = LogManager.getLogger(this.getClass()); // LOG4J2
 
 		//remote
-		if (p.getProperty("execution_evn").equalsIgnoreCase("remote")) {
+		if (p.getProperty("execution_env").equalsIgnoreCase("remote")) {
 
 			DesiredCapabilities capabilities = new DesiredCapabilities();
 
@@ -59,9 +67,9 @@ public class BaseClass {
 			{
 				capabilities.setPlatform(Platform.LINUX);
 			}
-			else 
+			else
 			{
-				System.out.println("No matching os");
+				logger.warn("No matching OS: " + os);
 			}
 			
 			
@@ -70,14 +78,14 @@ public class BaseClass {
 			case "chrome":capabilities.setBrowserName("chrome");break;
 			case "firefox":capabilities.setBrowserName("firefox");break;
 			case "edge":capabilities.setBrowserName("MicrosoftEdge");break;
-			default:System.out.println("no matching browser");return;
+			default:logger.warn("No matching browser: " + br);return;
 			}
 			driver = new RemoteWebDriver(new URL("http://localhost:4444/wd/hub"), capabilities);
 		}
 		
 
 		//local
-		if (p.getProperty("execution_evn").equalsIgnoreCase("local")) {
+		if (p.getProperty("execution_env").equalsIgnoreCase("local")) {
 			switch (br.toLowerCase()) {
 			case "chrome":
 				driver = new ChromeDriver();
@@ -89,12 +97,13 @@ public class BaseClass {
 				driver = new EdgeDriver();
 				break;
 			default:
-				System.out.println("Invalid browser name...");
+				logger.warn("Invalid browser name: " + br);
 				return;
 			}
 
 		}
 
+		tlDriver.set(driver);
 		driver.manage().deleteAllCookies();
 		driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
 		driver.manage().window().maximize();
@@ -103,8 +112,11 @@ public class BaseClass {
 	}
 
 	@AfterClass(groups = { "Sanity", "Regression", "Master", "DataProvider" })
-	public void terDown() {
-		driver.quit();
+	public void tearDown() {
+		if (driver != null) {
+			driver.quit();
+		}
+		tlDriver.remove();
 	}
 
 	// It will generate random Strings.
@@ -126,6 +138,19 @@ public class BaseClass {
 		return (generateString + "@" + gerenatenum);
 	}
 
+	private void resolveEnvVariables(Properties props) {
+		for (String key : props.stringPropertyNames()) {
+			String value = props.getProperty(key);
+			if (value != null && value.startsWith("${") && value.endsWith("}")) {
+				String envVar = value.substring(2, value.length() - 1);
+				String envValue = System.getenv(envVar);
+				if (envValue != null) {
+					props.setProperty(key, envValue);
+				}
+			}
+		}
+	}
+
 	public String captureScreen(String tname) throws IOException {
 
 		String timeStamp = new SimpleDateFormat("yy.MM.dd.HH.mm.ss").format(new Date());
@@ -133,7 +158,7 @@ public class BaseClass {
 		TakesScreenshot takesScreenshot = (TakesScreenshot) driver;
 		File sourceFile = takesScreenshot.getScreenshotAs(OutputType.FILE);
 
-		String targetFilePath = System.getProperty("user.dir") + "\\screenshots\\" + tname + "_" + timeStamp + ".png";
+		String targetFilePath = System.getProperty("user.dir") + File.separator + "screenshots" + File.separator + tname + "_" + timeStamp + ".png";
 		File targetFile = new File(targetFilePath);
 
 		sourceFile.renameTo(targetFile);

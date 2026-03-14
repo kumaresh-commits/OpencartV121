@@ -17,9 +17,14 @@ import com.aventstack.extentreports.Status;
 import com.aventstack.extentreports.reporter.ExtentSparkReporter;
 import com.aventstack.extentreports.reporter.configuration.Theme;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import testBase.BaseClass;
 
 public class ExtentReportManager implements ITestListener {
+
+	private static final Logger logger = LogManager.getLogger(ExtentReportManager.class);
 
 	public ExtentSparkReporter spartReporter; // UI of the report
 	public ExtentReports extent; // populate common info on the report
@@ -35,7 +40,7 @@ public class ExtentReportManager implements ITestListener {
 
 		String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date()); // time stamp
 		repName = "Test-Report-" + timeStamp + ".html";
-		spartReporter = new ExtentSparkReporter(".\\reports\\"+repName); // Specify location of the report
+		spartReporter = new ExtentSparkReporter("." + File.separator + "reports" + File.separator + repName); // Specify location of the report
 
 		spartReporter.config().setDocumentTitle("Opencart Automation Report"); // Title of report
 		spartReporter.config().setReportName("Opencart Functional testing"); // name of the report
@@ -43,9 +48,9 @@ public class ExtentReportManager implements ITestListener {
 
 		extent = new ExtentReports();
 		extent.attachReporter(spartReporter);
-		extent.setSystemInfo("Alppication", "Opencart");
-		extent.setSystemInfo("Modul", "Admin");
-		extent.setSystemInfo("Sub Modul", "Costomers");
+		extent.setSystemInfo("Application", "Opencart");
+		extent.setSystemInfo("Module", "Admin");
+		extent.setSystemInfo("Sub Module", "Customers");
 		extent.setSystemInfo("Engineer", "Kumaresan Durairaj");
 		//extent.setSystemInfo("User Name", System.getProperty("user.name"));
 		extent.setSystemInfo("Environemnt", "QA");
@@ -84,7 +89,7 @@ public class ExtentReportManager implements ITestListener {
 			test.addScreenCaptureFromPath(imgPath);
 
 		} catch (IOException e1) {
-			e1.printStackTrace();
+			logger.error("Failed to capture screenshot", e1);
 		}
 	}
 
@@ -100,36 +105,19 @@ public class ExtentReportManager implements ITestListener {
 
 		extent.flush();
 
-		String pathOfExtentReports = System.getProperty("user.dir")+"\\reports\\"+ repName;
+		String pathOfExtentReports = System.getProperty("user.dir") + File.separator + "reports" + File.separator + repName;
 		File extentReports = new File(pathOfExtentReports);
 		
 		  try { 
 			  Desktop.getDesktop().browse(extentReports.toURI()); 
 		  } catch
 		  (IOException e) 
-		  { 
-		  e.printStackTrace(); 
+		  {
+		  logger.error("Failed to open report in browser", e);
 		  }
 		  
 		 
 
-		// don't multiple time by your own email id, may your gmail id will blocked.
-		/*
-		 * try { URL url = new URL("file:///" + System.getProperty("user.dir") +
-		 * "\\reports\\" + repName);
-		 * 
-		 * // Create the email message ImageHtmlEmail email = new ImageHtmlEmail();
-		 * email.setDataSourceResolver(new DataSourceUrlResolver(url));
-		 * email.setHostName("www.gmail.com"); email.setSmtpPort(465);
-		 * email.setAuthenticator(new DefaultAuthenticator("kumararesh.d@gmail.com",
-		 * "Omshivam@12345")); email.setSSLOnConnect(true);
-		 * email.setFrom("kumararesh.d@gmail.com"); // Sender
-		 * email.setSubject("Test Result");
-		 * email.setMsg("Please find attached report...");
-		 * email.addTo("sunderpichhai@gmail.com"); // Recevier email.attach(url,
-		 * "extent report", "Please chech report"); email.send(); } catch (Exception e)
-		 * { e.printStackTrace(); }
-		 */
 	}
 
 }

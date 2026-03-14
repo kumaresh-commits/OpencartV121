@@ -107,11 +107,11 @@ public class ExcelUtility {
 		fo.close();
 	}
 
-	public void fillGreenColor(String sheenName, int rownum, int column) throws IOException {
+	public void fillGreenColor(String sheetName, int rownum, int column) throws IOException {
 
 		fi = new FileInputStream(path);
 		workbook = new XSSFWorkbook(fi);
-		sheet = workbook.getSheet(path);
+		sheet = workbook.getSheet(sheetName);
 		row = sheet.getRow(rownum);
 		cell = row.getCell(column);
 
@@ -129,11 +129,11 @@ public class ExcelUtility {
 
 	}
 
-	public void fillRedColor(String sheenName, int rownum, int column) throws IOException {
+	public void fillRedColor(String sheetName, int rownum, int column) throws IOException {
 
 		fi = new FileInputStream(path);
 		workbook = new XSSFWorkbook(fi);
-		sheet = workbook.getSheet(path);
+		sheet = workbook.getSheet(sheetName);
 		row = sheet.getRow(rownum);
 		cell = row.getCell(column);
 
